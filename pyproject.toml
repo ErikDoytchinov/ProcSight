@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "procsight"
+version = "0.1.0"
+description = "Python tool for monitoring and visualizing a running processes usage"
+authors = ["ErikDoytchinov <erik.doytchinov@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+matplotlib = "^3.10.3"
+pandas = "^2.3.0"
+psutil = "^7.0.0"
+ruff = "^0.12.2"
+loguru = "^0.7.3"
+pydantic = "^2.11.7"
+schedule = "^1.2.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
