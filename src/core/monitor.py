@@ -30,7 +30,7 @@ class Monitor:
 
         if extended:
             collection: Union[
-                List[Tuple[CpuUsage, MemoryUsage]], List[ProcessSample]
+                list[tuple[CpuUsage, MemoryUsage]], list[ProcessSample]
             ] = []
         else:
             collection = []
