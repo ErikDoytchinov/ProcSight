@@ -1,9 +1,10 @@
 from time import monotonic, sleep
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import psutil
 
-from src.models.metrics import CpuUsage, MemoryUsage
+from src.core.sample_collector import collect_basic_tuple, collect_sample
+from src.models.metrics import CpuUsage, MemoryUsage, ProcessSample
 
 
 class Monitor:
@@ -12,9 +13,10 @@ class Monitor:
         self.interval = interval
 
     def get_process_usage_by_interval(
-        self, duration: int, samples: int
-    ) -> List[Tuple[CpuUsage, MemoryUsage]]:
-        """Collect process metrics.
+        self, duration: int, samples: int, extended: bool = False
+    ) -> Union[List[Tuple[CpuUsage, MemoryUsage]], List[ProcessSample]]:
+        """
+        Collect process metrics.
 
         Modes (mutually exclusive):
           - duration > 0: run for that many seconds
@@ -26,63 +28,54 @@ class Monitor:
                 "Provide only one of duration or samples (or neither for continuous mode)."
             )
 
-        collection: List[Tuple[CpuUsage, MemoryUsage]] = []
+        if extended:
+            collection: Union[
+                List[Tuple[CpuUsage, MemoryUsage]], List[ProcessSample]
+            ] = []
+        else:
+            collection = []
 
         # prime CPU percent (first call always returns 0.0 otherwise)
         psutil.Process(self.pid).cpu_percent(interval=None)
 
         if duration:
-            self.__collect_for_duration(duration, collection)
+            self.__collect_for_duration(duration, collection, extended)
         elif samples:
-            self.__collect_for_samples(samples, collection)
+            self.__collect_for_samples(samples, collection, extended)
         else:
-            self.__collect_continuous(collection)
+            self.__collect_continuous(collection, extended)
 
         return collection
 
-    def __collect_for_duration(
-        self, duration: int, collection: List[Tuple[CpuUsage, MemoryUsage]]
-    ) -> None:
+    def __collect_for_duration(self, duration: int, collection, extended: bool) -> None:
         start = monotonic()
         interval = self.interval
         count = 0
         while (monotonic() - start) < duration:
-            self.__get_all_usage_metrics(collection)
+            self.__get_all_usage_metrics(collection, extended)
             count += 1
             next_time = start + count * interval
             sleep(max(0.0, next_time - monotonic()))
 
-    def __collect_for_samples(
-        self, samples: int, collection: List[Tuple[CpuUsage, MemoryUsage]]
-    ) -> None:
+    def __collect_for_samples(self, samples: int, collection, extended: bool) -> None:
         for _ in range(samples):
-            self.__get_all_usage_metrics(collection)
+            self.__get_all_usage_metrics(collection, extended)
             sleep(self.interval)
 
-    def __collect_continuous(
-        self, collection: List[Tuple[CpuUsage, MemoryUsage]]
-    ) -> None:
+    def __collect_continuous(self, collection, extended: bool) -> None:
         print("Sampling continuously. Press Ctrl+C to stop.")
         try:
             while True:
-                self.__get_all_usage_metrics(collection)
+                self.__get_all_usage_metrics(collection, extended)
                 sleep(self.interval)
         except KeyboardInterrupt:
             print("\nStopping continuous sampling (Ctrl+C).")
 
-    def __get_all_usage_metrics(
-        self, collection: List[Tuple[CpuUsage, MemoryUsage]]
-    ) -> None:
-        cpu_usage = self.__get_cpu_usage(self.pid)
-        memory_usage = self.__get_memory_usage(self.pid)
-        collection.append((cpu_usage, memory_usage))
-
-    def __get_cpu_usage(self, pid: int) -> CpuUsage:
-        return CpuUsage(percent=psutil.Process(pid=pid).cpu_percent(interval=None))
-
-    def __get_memory_usage(self, pid: int) -> MemoryUsage:
-        raw = psutil.Process(pid=pid).memory_info()._asdict()
-        return MemoryUsage(
-            rss=raw["rss"] / (1024**2),
-            vms=raw["vms"] / (1024**2),
-        )
+    def __get_all_usage_metrics(self, collection, extended: bool) -> None:
+        proc = psutil.Process(self.pid)
+        if extended:
+            sample = collect_sample(proc)
+            collection.append(sample)
+        else:
+            cpu_usage, memory_usage = collect_basic_tuple(proc)
+            collection.append((cpu_usage, memory_usage))

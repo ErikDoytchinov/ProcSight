@@ -1,0 +1,157 @@
+from __future__ import annotations
+
+from time import time
+from typing import Tuple
+
+import psutil  # type: ignore
+from loguru import logger
+
+from src.models.metrics import (
+    ContextSwitchesUsage,
+    CpuUsage,
+    DescriptorUsage,
+    IOUsage,
+    MemoryUsage,
+    ProcessMeta,
+    ProcessSample,
+    ThreadUsage,
+)
+
+_MB = 1024**2
+
+
+def collect_sample(proc: psutil.Process) -> ProcessSample:
+    """
+    Collect a single rich process sample.
+
+    Assumes caller has already *primed* cpu_percent with interval=None exactly once
+    for the process before the first invocation, so this call is non-blocking.
+    """
+    # cpu
+    cpu_pct = proc.cpu_percent(interval=None)
+    cpu_times = proc.cpu_times()
+    cpu = CpuUsage(
+        percent=cpu_pct,
+        user=getattr(cpu_times, "user", None),
+        system=getattr(cpu_times, "system", None),
+    )
+
+    # memory (prefer full info when available; fallback gracefully)
+    try:
+        mem_full = proc.memory_full_info()
+    except Exception:
+        mem_full = proc.memory_info()
+
+    memory = MemoryUsage(
+        rss=getattr(mem_full, "rss", 0) / _MB,
+        vms=getattr(mem_full, "vms", 0) / _MB,
+        shared=(getattr(mem_full, "shared", None) or 0) / _MB
+        if getattr(mem_full, "shared", None) is not None
+        else None,
+        data=(getattr(mem_full, "data", None) or 0) / _MB
+        if getattr(mem_full, "data", None) is not None
+        else None,
+        text=(getattr(mem_full, "text", None) or 0) / _MB
+        if getattr(mem_full, "text", None) is not None
+        else None,
+    )
+
+    # IO
+    try:
+        io_c = proc.io_counters()  # type: ignore[attr-defined]
+        io_usage = IOUsage(
+            read_count=io_c.read_count,
+            write_count=io_c.write_count,
+            read_bytes=io_c.read_bytes,
+            write_bytes=io_c.write_bytes,
+            read_chars=getattr(io_c, "read_chars", None),
+            write_chars=getattr(io_c, "write_chars", None),
+        )
+    except Exception:
+        io_usage = IOUsage(
+            read_count=0,
+            write_count=0,
+            read_bytes=0,
+            write_bytes=0,
+        )
+
+    # ctx switch
+    try:
+        ctx = proc.num_ctx_switches()
+        ctx_usage = ContextSwitchesUsage(
+            voluntary=ctx.voluntary, involuntary=ctx.involuntary
+        )
+    except Exception:
+        ctx_usage = ContextSwitchesUsage(voluntary=0, involuntary=0)
+
+    # open files
+    try:
+        open_files = len(proc.open_files())
+    except Exception:
+        open_files = 0
+    try:
+        fds = proc.num_fds()
+    except Exception:
+        fds = 0
+    desc_usage = DescriptorUsage(open_files=open_files, fds=fds)
+
+    # threads
+    try:
+        thread_usage = ThreadUsage(threads=proc.num_threads())
+    except Exception:
+        thread_usage = ThreadUsage(threads=0)
+
+    # meta
+    now = time()
+    try:
+        create_time = proc.create_time()
+        uptime = max(0.0, now - create_time)
+    except Exception:
+        uptime = 0.0
+    try:
+        status = proc.status()
+    except Exception:
+        status = "unknown"
+    try:
+        affinity = proc.cpu_affinity()  # type: ignore[attr-defined]
+    except Exception:
+        affinity = None
+    meta = ProcessMeta(
+        pid=proc.pid,
+        uptime_sec=uptime,
+        status=status,
+        cpu_affinity=affinity,
+    )
+
+    sample = ProcessSample(
+        cpu=cpu,
+        memory=memory,
+        io=io_usage,
+        ctx=ctx_usage,
+        descriptors=desc_usage,
+        threads=thread_usage,
+        meta=meta,
+    )
+
+    logger.debug(sample.model_dump_json())
+    return sample
+
+
+def collect_basic_tuple(proc: psutil.Process) -> Tuple[CpuUsage, MemoryUsage]:
+    cpu_pct = proc.cpu_percent(interval=None)
+    cpu_times = None
+    try:
+        cpu_times = proc.cpu_times()
+    except Exception:
+        pass
+    cpu = CpuUsage(
+        percent=cpu_pct,
+        user=getattr(cpu_times, "user", None) if cpu_times else None,
+        system=getattr(cpu_times, "system", None) if cpu_times else None,
+    )
+    mem_info = proc.memory_info()
+    memory = MemoryUsage(
+        rss=mem_info.rss / _MB,
+        vms=mem_info.vms / _MB,
+    )
+    return cpu, memory
