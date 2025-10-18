@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+from pathlib import Path
 from typing import List, Tuple
 
 import psutil
@@ -34,10 +35,31 @@ def main():
                 logger.debug(f"CPU:{cpu_usage.model_dump_json}")
                 logger.debug(f"Memory:{memory_usage.model_dump_json}")
 
-            interval = args.interval
-            times = [i * interval for i in range(len(basic_tuples))]
-            plot_cpu_usage(basic_tuples, times)
-            plot_memory_usage(basic_tuples, times)
+            # we use actual sampled times captured by Monitor
+            times = monitor.sample_times
+
+            cpu_path = None
+            mem_path = None
+            if args.save_plots:
+                p = Path(args.save_plots)
+                p.mkdir(parents=True, exist_ok=True)
+                cpu_path = str(p / f"cpu_pid{args.pid}.png")
+                mem_path = str(p / f"mem_pid{args.pid}.png")
+
+            plot_cpu_usage(
+                basic_tuples,
+                times,
+                show=not args.no_show,
+                save_path=cpu_path,
+                dpi=args.dpi,
+            )
+            plot_memory_usage(
+                basic_tuples,
+                times,
+                show=not args.no_show,
+                save_path=mem_path,
+                dpi=args.dpi,
+            )
         else:
             logger.info(
                 "Extended sampling complete (plots currently only for basic mode)."

@@ -11,6 +11,13 @@ class Monitor:
     def __init__(self, pid: int, interval: int):
         self.pid = pid
         self.interval = interval
+        self._sample_times: List[float] = []
+        self._base_mono: float | None = None
+
+    @property
+    def sample_times(self) -> List[float]:
+        """Return a list of elapsed seconds per collected sample (aligned to first sample)."""
+        return list(self._sample_times)
 
     def get_process_usage_by_interval(
         self, duration: int, samples: int, extended: bool = False
@@ -27,6 +34,10 @@ class Monitor:
             raise ValueError(
                 "Provide only one of duration or samples (or neither for continuous mode)."
             )
+
+        # reset timing state for this run
+        self._sample_times = []
+        self._base_mono = None
 
         if extended:
             collection: Union[
@@ -77,6 +88,10 @@ class Monitor:
         self, collection, extended: bool, sample_index: int
     ) -> None:
         proc = psutil.Process(self.pid)
+        now_m = monotonic()
+        if self._base_mono is None:
+            self._base_mono = now_m
+        self._sample_times.append(now_m - self._base_mono)
         if extended:
             sample = collect_sample(proc, sample_index)
             collection.append(sample)
