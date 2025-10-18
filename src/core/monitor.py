@@ -13,6 +13,7 @@ class Monitor:
         self.interval = interval
         self._sample_times: List[float] = []
         self._base_mono: float | None = None
+        self._proc: psutil.Process = psutil.Process(self.pid)
 
     @property
     def sample_times(self) -> List[float]:
@@ -45,9 +46,6 @@ class Monitor:
             ] = []
         else:
             collection = []
-
-        # prime CPU percent (first call always returns 0.0 otherwise)
-        psutil.Process(self.pid).cpu_percent(interval=None)
 
         if duration:
             self.__collect_for_duration(duration, collection, extended)
@@ -87,14 +85,15 @@ class Monitor:
     def __get_all_usage_metrics(
         self, collection, extended: bool, sample_index: int
     ) -> None:
-        proc = psutil.Process(self.pid)
+        self._proc.cpu_percent(interval=None)
+
         now_m = monotonic()
         if self._base_mono is None:
             self._base_mono = now_m
         self._sample_times.append(now_m - self._base_mono)
         if extended:
-            sample = collect_sample(proc, sample_index)
+            sample = collect_sample(self._proc, sample_index)
             collection.append(sample)
         else:
-            cpu_usage, memory_usage = collect_basic_tuple(proc)
+            cpu_usage, memory_usage = collect_basic_tuple(self._proc)
             collection.append((cpu_usage, memory_usage))

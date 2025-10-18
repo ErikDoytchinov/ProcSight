@@ -15,7 +15,7 @@ from src.visualization.plot import plot_cpu_usage, plot_memory_usage
 
 def main():
     logger.remove()
-    logger.add(sys.stdout, level="INFO")
+    logger.add(sys.stdout, level="DEBUG")
 
     args = get_params()
 

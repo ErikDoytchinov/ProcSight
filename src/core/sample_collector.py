@@ -20,7 +20,7 @@ from src.models.metrics import (
 _MB = 1024**2
 
 
-def collect_sample(proc: psutil.Process, sample_index: int | None = None) -> ProcessSample:
+def collect_sample(proc: psutil.Process, sample_index: int) -> ProcessSample:
     """
     Collect a single rich process sample.
 
