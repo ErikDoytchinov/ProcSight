@@ -52,29 +52,33 @@ class Monitor:
         interval = self.interval
         count = 0
         while (monotonic() - start) < duration:
-            self.__get_all_usage_metrics(collection, extended)
+            self.__get_all_usage_metrics(collection, extended, sample_index=count + 1)
             count += 1
             next_time = start + count * interval
             sleep(max(0.0, next_time - monotonic()))
 
     def __collect_for_samples(self, samples: int, collection, extended: bool) -> None:
-        for _ in range(samples):
-            self.__get_all_usage_metrics(collection, extended)
+        for i in range(1, samples + 1):
+            self.__get_all_usage_metrics(collection, extended, sample_index=i)
             sleep(self.interval)
 
     def __collect_continuous(self, collection, extended: bool) -> None:
         print("Sampling continuously. Press Ctrl+C to stop.")
         try:
+            count = 0
             while True:
-                self.__get_all_usage_metrics(collection, extended)
+                count += 1
+                self.__get_all_usage_metrics(collection, extended, sample_index=count)
                 sleep(self.interval)
         except KeyboardInterrupt:
             print("\nStopping continuous sampling (Ctrl+C).")
 
-    def __get_all_usage_metrics(self, collection, extended: bool) -> None:
+    def __get_all_usage_metrics(
+        self, collection, extended: bool, sample_index: int
+    ) -> None:
         proc = psutil.Process(self.pid)
         if extended:
-            sample = collect_sample(proc)
+            sample = collect_sample(proc, sample_index)
             collection.append(sample)
         else:
             cpu_usage, memory_usage = collect_basic_tuple(proc)

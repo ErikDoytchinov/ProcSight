@@ -25,7 +25,8 @@ def main():
             duration=args.duration, samples=args.samples, extended=args.extended
         )
 
-        export_to_csv(args, data)
+        if args.out:
+            export_to_csv(args, data)
 
         if not args.extended:
             basic_tuples: List[Tuple[CpuUsage, MemoryUsage]] = data  # type: ignore[assignment]

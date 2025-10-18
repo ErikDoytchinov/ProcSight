@@ -48,6 +48,7 @@ class ProcessMeta(BaseModel):
 
 
 class ProcessSample(BaseModel):
+    sample: int
     cpu: CpuUsage
     memory: MemoryUsage
     io: IOUsage

@@ -1,51 +1,99 @@
+import pandas as pd
 from loguru import logger
 from pandas import DataFrame
 
-from src.models.metrics import CpuUsage, MemoryUsage, ProcessSample
+from src.models.metrics import CpuUsage, MemoryUsage
+
+
+def _append_average_row(df: DataFrame) -> DataFrame:
+    means = df.drop(columns=["sample"], errors="ignore").mean(numeric_only=True)
+    avg_row = {"sample": "avg", **means.to_dict()}
+    return pd.concat([df, DataFrame([avg_row])], ignore_index=True)
 
 
 def export_to_csv(args, data):
-    if args.out:
-        if args.extended:
-            rows = []
-            for s in data:
-                assert isinstance(s, ProcessSample)
-                rows.append(
-                    {
-                        "pid": s.meta.pid,
-                        "uptime_sec": s.meta.uptime_sec,
-                        "status": s.meta.status,
-                        "cpu_percent": s.cpu.percent,
-                        "cpu_user": s.cpu.user,
-                        "cpu_system": s.cpu.system,
-                        "rss_mb": s.memory.rss,
-                        "vms_mb": s.memory.vms,
-                        "shared_mb": s.memory.shared,
-                        "data_mb": s.memory.data,
-                        "text_mb": s.memory.text,
-                        "read_count": s.io.read_count,
-                        "write_count": s.io.write_count,
-                        "read_bytes": s.io.read_bytes,
-                        "write_bytes": s.io.write_bytes,
-                        "read_chars": s.io.read_chars,
-                        "write_chars": s.io.write_chars,
-                        "ctx_voluntary": s.ctx.voluntary,
-                        "ctx_involuntary": s.ctx.involuntary,
-                        "open_files": s.descriptors.open_files,
-                        "fds": s.descriptors.fds,
-                        "threads": s.threads.threads,
-                        "cpu_affinity": ";".join(map(str, s.meta.cpu_affinity))
-                        if s.meta.cpu_affinity
-                        else None,
-                    }
-                )
-            DataFrame(rows).to_csv(args.out, index=False)
-        else:
-            basic_tuples: list[tuple[CpuUsage, MemoryUsage]] = data  # type: ignore[assignment]
-            basic_rows = {
-                "cpu_percent": [cpu.percent for cpu, _ in basic_tuples],
-                "rss_mb": [mem.rss for _, mem in basic_tuples],
-                "vms_mb": [mem.vms for _, mem in basic_tuples],
+    if args.extended:
+        rows = [s.model_dump() for s in data]
+        df = pd.json_normalize(rows)
+
+        rename_map = {
+            "sample": "sample",
+            "meta.uptime_sec": "uptime_sec",
+            "meta.status": "status",
+            "cpu.percent": "cpu_percent",
+            "cpu.user": "cpu_user",
+            "cpu.system": "cpu_system",
+            "memory.rss": "rss_mb",
+            "memory.vms": "vms_mb",
+            "memory.shared": "shared_mb",
+            "memory.data": "data_mb",
+            "memory.text": "text_mb",
+            "io.read_count": "read_count",
+            "io.write_count": "write_count",
+            "io.read_bytes": "read_bytes",
+            "io.write_bytes": "write_bytes",
+            "io.read_chars": "read_chars",
+            "io.write_chars": "write_chars",
+            "ctx.voluntary": "ctx_voluntary",
+            "ctx.involuntary": "ctx_involuntary",
+            "descriptors.open_files": "open_files",
+            "descriptors.fds": "fds",
+            "threads.threads": "threads",
+            "meta.cpu_affinity": "cpu_affinity",
+        }
+        df = df.rename(columns=rename_map)
+
+        if "cpu_affinity" in df.columns:
+
+            def _join_affinity(v):
+                if isinstance(v, (list, tuple)) and len(v) > 0:
+                    return ";".join(map(str, v))
+                return None
+
+            df["cpu_affinity"] = df["cpu_affinity"].apply(_join_affinity)
+
+        preferred_order = [
+            "sample",
+            "uptime_sec",
+            "status",
+            "cpu_percent",
+            "cpu_user",
+            "cpu_system",
+            "rss_mb",
+            "vms_mb",
+            "shared_mb",
+            "data_mb",
+            "text_mb",
+            "read_count",
+            "write_count",
+            "read_bytes",
+            "write_bytes",
+            "read_chars",
+            "write_chars",
+            "ctx_voluntary",
+            "ctx_involuntary",
+            "open_files",
+            "fds",
+            "threads",
+            "cpu_affinity",
+        ]
+        existing_cols = [c for c in preferred_order if c in df.columns]
+        df = df[existing_cols]
+
+        df = _append_average_row(df)
+        df.to_csv(args.out, index=False)
+    else:
+        basic_tuples: list[tuple[CpuUsage, MemoryUsage]] = data
+        rows = [
+            {
+                "sample": i + 1,
+                "cpu_percent": cpu.percent,
+                "rss_mb": mem.rss,
+                "vms_mb": mem.vms,
             }
-            DataFrame(basic_rows).to_csv(args.out, index=False)
-        logger.info(f"Saved CSV at: {args.out}")
+            for i, (cpu, mem) in enumerate(basic_tuples)
+        ]
+        df = DataFrame(rows)
+        df = _append_average_row(df)
+        df.to_csv(args.out, index=False)
+    logger.info(f"Saved CSV at: {args.out}")
