@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from time import time
-from typing import Tuple
+from typing import Optional, Tuple
 
 import psutil  # type: ignore
 from loguru import logger
@@ -138,8 +138,14 @@ def collect_sample(proc: psutil.Process, sample_index: int) -> ProcessSample:
     return sample
 
 
-def collect_basic_tuple(proc: psutil.Process) -> Tuple[CpuUsage, MemoryUsage]:
-    cpu_pct = proc.cpu_percent(interval=None)
+def collect_basic_tuple(
+    proc: psutil.Process, precomputed_cpu_pct: Optional[float] = None
+) -> Tuple[CpuUsage, MemoryUsage]:
+    cpu_pct = (
+        precomputed_cpu_pct
+        if precomputed_cpu_pct is not None
+        else proc.cpu_percent(interval=None)
+    )
     cpu_times = None
     try:
         cpu_times = proc.cpu_times()

@@ -8,7 +8,7 @@ from src.models.metrics import CpuUsage, MemoryUsage, ProcessSample
 
 
 class Monitor:
-    def __init__(self, pid: int, interval: int):
+    def __init__(self, pid: int, interval: float):
         self.pid = pid
         self.interval = interval
         self._sample_times: List[float] = []
@@ -39,6 +39,9 @@ class Monitor:
         # reset timing state for this run
         self._sample_times = []
         self._base_mono = None
+
+        # prime CPU percent once so subsequent non-blocking calls have a baseline
+        self._proc.cpu_percent(interval=None)
 
         if extended:
             collection: Union[
@@ -85,8 +88,6 @@ class Monitor:
     def __get_all_usage_metrics(
         self, collection, extended: bool, sample_index: int
     ) -> None:
-        self._proc.cpu_percent(interval=None)
-
         now_m = monotonic()
         if self._base_mono is None:
             self._base_mono = now_m
