@@ -20,6 +20,19 @@ from src.models.metrics import (
 _MB = 1024**2
 
 
+def _effective_core_count(proc: psutil.Process) -> int:
+    # try process CPU affinity (not available on macOS and some platforms)
+    try:
+        affinity = proc.cpu_affinity()  # type: ignore[attr-defined]
+        if isinstance(affinity, (list, tuple)) and len(affinity) > 0:
+            return max(1, len(affinity))
+    except Exception:
+        pass
+
+    logical = psutil.cpu_count(logical=True) or 1
+    return max(1, int(logical))
+
+
 def collect_sample(proc: psutil.Process, sample_index: int) -> ProcessSample:
     """
     Collect a single rich process sample.
@@ -28,7 +41,9 @@ def collect_sample(proc: psutil.Process, sample_index: int) -> ProcessSample:
     for the process before the first invocation, so this call is non-blocking.
     """
     # cpu
-    cpu_pct = proc.cpu_percent(interval=None)
+    cpu_pct_total = proc.cpu_percent(interval=None)
+    cores = _effective_core_count(proc)
+    cpu_pct = cpu_pct_total / float(cores)
     cpu_times = proc.cpu_times()
     cpu = CpuUsage(
         percent=cpu_pct,
@@ -141,11 +156,14 @@ def collect_sample(proc: psutil.Process, sample_index: int) -> ProcessSample:
 def collect_basic_tuple(
     proc: psutil.Process, precomputed_cpu_pct: Optional[float] = None
 ) -> Tuple[CpuUsage, MemoryUsage]:
-    cpu_pct = (
+    # total CPU% from psutil can be up to 100 * cores; normalize to per-core %
+    cpu_pct_total = (
         precomputed_cpu_pct
         if precomputed_cpu_pct is not None
         else proc.cpu_percent(interval=None)
     )
+    cores = _effective_core_count(proc)
+    cpu_pct = cpu_pct_total / float(cores)
     cpu_times = None
     try:
         cpu_times = proc.cpu_times()
