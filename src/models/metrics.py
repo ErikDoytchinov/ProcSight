@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class CpuUsage(BaseModel):
-    percent: float
+    process: float
     user: Optional[float] = None
     system: Optional[float] = None
 

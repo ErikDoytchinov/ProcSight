@@ -43,12 +43,11 @@ def collect_sample(proc: psutil.Process, sample_index: int) -> ProcessSample:
     # cpu
     cpu_pct_total = proc.cpu_percent(interval=None)
     cores = _effective_core_count(proc)
-    cpu_pct = cpu_pct_total / float(cores)
     cpu_times = proc.cpu_times()
     cpu = CpuUsage(
-        percent=cpu_pct,
-        user=getattr(cpu_times, "user", None),
-        system=getattr(cpu_times, "system", None),
+        process=cpu_pct_total / float(cores),
+        user=getattr(cpu_times, "user") / float(cores),
+        system=getattr(cpu_times, "system") / float(cores),
     )
 
     # memory (prefer full info when available; fallback gracefully)
@@ -163,16 +162,12 @@ def collect_basic_tuple(
         else proc.cpu_percent(interval=None)
     )
     cores = _effective_core_count(proc)
-    cpu_pct = cpu_pct_total / float(cores)
     cpu_times = None
-    try:
-        cpu_times = proc.cpu_times()
-    except Exception:
-        pass
+    cpu_times = proc.cpu_times()
     cpu = CpuUsage(
-        percent=cpu_pct,
-        user=getattr(cpu_times, "user", None) if cpu_times else None,
-        system=getattr(cpu_times, "system", None) if cpu_times else None,
+        process=cpu_pct_total / float(cores),
+        user=getattr(cpu_times, "user") / float(cores),
+        system=getattr(cpu_times, "system") / float(cores),
     )
     mem_info = proc.memory_info()
     memory = MemoryUsage(

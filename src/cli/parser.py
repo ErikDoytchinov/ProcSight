@@ -55,11 +55,23 @@ def get_params() -> Namespace:
         help="Directory path to save PNG plots (cpu.png, mem.png). If not set, plots are only shown unless --no-show is used.",
     )
     parser.add_argument(
+        "--format",
+        dest="img_format",
+        choices=["png", "svg", "pdf"],
+        default="png",
+        help="Image format for saved plots (default: png)",
+    )
+    parser.add_argument(
         "--dpi",
         action="store",
         type=int,
         default=144,
         help="DPI for saved PNGs (default: 144)",
+    )
+    parser.add_argument(
+        "--transparent",
+        action="store_true",
+        help="Save figures with transparent background",
     )
     parser.add_argument(
         "--no-show",
@@ -70,6 +82,12 @@ def get_params() -> Namespace:
         "--extended",
         action="store_true",
         help="Collect extended metrics (IO, ctx switches, fds, threads, meta)",
+    )
+    parser.add_argument(
+        "--theme",
+        choices=["light", "dark"],
+        default="light",
+        help="Plot theme (light or dark). Default: light",
     )
     args = parser.parse_args()
 
@@ -123,8 +141,11 @@ def get_params() -> Namespace:
     logger.info(f"samples: {args.samples}")
     logger.info(f"out: {args.out}")
     logger.info(f"save-plots: {getattr(args, 'save_plots', None)}")
+    logger.info(f"img_format: {getattr(args, 'img_format', 'png')}")
     logger.info(f"dpi: {getattr(args, 'dpi', None)}")
+    logger.info(f"transparent: {getattr(args, 'transparent', False)}")
     logger.info(f"no-show: {getattr(args, 'no_show', False)}")
     logger.info(f"extended: {getattr(args, 'extended', False)}")
+    logger.info(f"theme: {getattr(args, 'theme', 'light')}")
 
     return args

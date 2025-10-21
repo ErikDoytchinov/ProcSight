@@ -87,7 +87,7 @@ def export_to_csv(args, data):
         rows = [
             {
                 "sample": i + 1,
-                "cpu_percent": cpu.percent,
+                "cpu_percent": cpu.process,
                 "rss_mb": mem.rss,
                 "vms_mb": mem.vms,
             }
