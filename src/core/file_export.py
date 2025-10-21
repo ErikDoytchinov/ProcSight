@@ -20,7 +20,7 @@ def export_to_csv(args, data):
             "sample": "sample",
             "meta.uptime_sec": "uptime_sec",
             "meta.status": "status",
-            "cpu.percent": "cpu_percent",
+            "cpu.process": "cpu_percent",
             "cpu.user": "cpu_user",
             "cpu.system": "cpu_system",
             "memory.rss": "rss_mb",
