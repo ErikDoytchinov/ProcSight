@@ -6,11 +6,11 @@ from typing import List, Tuple, cast
 import psutil
 from loguru import logger
 
-from src.cli.parser import get_params
-from src.core.file_export import export_to_csv
-from src.core.monitor import Monitor
-from src.models.metrics import CpuUsage, MemoryUsage, ProcessSample
-from src.visualization.plot import (
+from procsight.cli.parser import get_params
+from procsight.core.file_export import export_to_csv
+from procsight.core.monitor import Monitor
+from procsight.models.metrics import CpuUsage, MemoryUsage, ProcessSample
+from procsight.visualization.plot import (
     plot_cpu_usage,
     plot_from_extended,
     plot_memory_usage,

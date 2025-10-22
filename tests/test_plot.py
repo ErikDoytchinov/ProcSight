@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.models.metrics import (
+from procsight.models.metrics import (
     ContextSwitchesUsage,
     CpuUsage,
     DescriptorUsage,
@@ -10,7 +10,7 @@ from src.models.metrics import (
     ProcessSample,
     ThreadUsage,
 )
-from src.visualization.plot import (
+from procsight.visualization.plot import (
     plot_cpu_usage,
     plot_from_extended,
     plot_memory_usage,

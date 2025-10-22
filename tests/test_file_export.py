@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import pandas as pd
 
-from src.core.file_export import export_to_csv
-from src.models.metrics import (
+from procsight.core.file_export import export_to_csv
+from procsight.models.metrics import (
     ContextSwitchesUsage,
     CpuUsage,
     DescriptorUsage,

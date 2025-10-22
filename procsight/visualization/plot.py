@@ -10,8 +10,8 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from matplotlib.ticker import MaxNLocator
 
-from src.models.metrics import CpuUsage, MemoryUsage, ProcessSample
-from src.visualization.style import Theme, apply_style
+from procsight.models.metrics import CpuUsage, MemoryUsage, ProcessSample
+from procsight.visualization.style import Theme, apply_style
 
 
 def _finalize(fig: Figure, ax: Axes, *, title: str | None = None) -> None:

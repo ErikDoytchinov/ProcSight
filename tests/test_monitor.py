@@ -4,8 +4,8 @@ from typing import Tuple, cast
 import psutil
 import pytest
 
-from src.core.monitor import Monitor
-from src.models.metrics import CpuUsage, MemoryUsage
+from procsight.core.monitor import Monitor
+from procsight.models.metrics import CpuUsage, MemoryUsage
 
 
 class _FakeProc:
@@ -40,8 +40,8 @@ def test_collect_exact_samples(monkeypatch):
         t["val"] += 1.0
         return v
 
-    monkeypatch.setattr("src.core.monitor.monotonic", fake_mono)
-    monkeypatch.setattr("src.core.monitor.sleep", lambda s: None)
+    monkeypatch.setattr("procsight.core.monitor.monotonic", fake_mono)
+    monkeypatch.setattr("procsight.core.monitor.sleep", lambda s: None)
 
     m = Monitor(pid=1234, interval=0.01)
     result = m.get_process_usage_by_interval(duration=0, samples=3, extended=False)

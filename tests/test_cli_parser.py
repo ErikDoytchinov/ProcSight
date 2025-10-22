@@ -3,7 +3,7 @@ import sys
 import psutil
 import pytest
 
-from src.cli.parser import get_params
+from procsight.cli.parser import get_params
 
 
 class _FakeIterProc:

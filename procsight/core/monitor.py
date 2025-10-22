@@ -3,8 +3,8 @@ from typing import List, Tuple, Union
 
 import psutil
 
-from src.core.sample_collector import collect_basic_tuple, collect_sample
-from src.models.metrics import CpuUsage, MemoryUsage, ProcessSample
+from procsight.core.sample_collector import collect_basic_tuple, collect_sample
+from procsight.models.metrics import CpuUsage, MemoryUsage, ProcessSample
 
 
 class Monitor:

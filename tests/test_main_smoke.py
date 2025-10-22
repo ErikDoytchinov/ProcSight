@@ -1,6 +1,6 @@
 import sys
 
-from src.models.metrics import (
+from procsight.models.metrics import (
     ContextSwitchesUsage,
     CpuUsage,
     DescriptorUsage,

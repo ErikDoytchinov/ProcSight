@@ -6,7 +6,7 @@ from typing import Optional, Tuple
 import psutil  # type: ignore
 from loguru import logger
 
-from src.models.metrics import (
+from procsight.models.metrics import (
     ContextSwitchesUsage,
     CpuUsage,
     DescriptorUsage,

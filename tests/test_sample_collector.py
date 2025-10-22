@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import psutil
 import pytest
 
-from src.core.sample_collector import collect_basic_tuple, collect_sample
+from procsight.core.sample_collector import collect_basic_tuple, collect_sample
 
 
 class FakeProc:

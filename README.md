@@ -90,7 +90,7 @@ chmod +x scripts/stress.sh
 
 ## CLI reference
 
-All options (from `src/cli/parser.py`):
+All options (from `procsight/cli/parser.py`):
 
 - `--pid <int>`: PID of the process to monitor
 - `--name <str>`: Process name to monitor (first matching process is used if `--pid` isn’t provided)
@@ -143,8 +143,8 @@ Use `--theme dark` and `--transparent` for presentation‑friendly assets.
 You can use ProcSight as a library in your own scripts:
 
 ```python
-from src.core.monitor import Monitor
-from src.visualization.plot import plot_cpu_usage, plot_memory_usage, plot_from_extended
+from procsight.core.monitor import Monitor
+from procsight.visualization.plot import plot_cpu_usage, plot_memory_usage, plot_from_extended
 
 m = Monitor(pid=12345, interval=0.5)
 # Basic tuples: List[Tuple[CpuUsage, MemoryUsage]]
@@ -161,7 +161,7 @@ plot_from_extended(extended, m.sample_times, out_dir="./plots", show=False)
 CSV export helper:
 
 ```python
-from src.core.file_export import export_to_csv
+from procsight.core.file_export import export_to_csv
 export_to_csv(SimpleNamespace(extended=True, out="out.csv"), extended)
 ```
 
@@ -178,12 +178,12 @@ export_to_csv(SimpleNamespace(extended=True, out="out.csv"), extended)
     # Coverage HTML report at htmlcov/index.html
     ```
 
-Project layout uses `src/` with modules under:
+Project layout uses `procsight/` with modules under:
 
-- `src/core` — sampling, monitor, CSV export
-- `src/models` — pydantic models for metrics
-- `src/visualization` — plotting and themes
-- `src/cli` — argument parsing
+- `procsight/core` — sampling, monitor, CSV export
+- `procsight/models` — pydantic models for metrics
+- `procsight/visualization` — plotting and themes
+- `procsight/cli` — argument parsing
 
 ## Packaging and publishing
 

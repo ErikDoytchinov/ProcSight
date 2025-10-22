@@ -2,7 +2,7 @@ import pandas as pd
 from loguru import logger
 from pandas import DataFrame
 
-from src.models.metrics import CpuUsage, MemoryUsage
+from procsight.models.metrics import CpuUsage, MemoryUsage
 
 
 def _append_average_row(df: DataFrame) -> DataFrame:
