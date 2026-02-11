@@ -185,23 +185,6 @@ Project layout uses `procsight/` with modules under:
 - `procsight/visualization` — plotting and themes
 - `procsight/cli` — argument parsing
 
-## Packaging and publishing
-
-This project is configured for Poetry packaging (`pyproject.toml`):
-
-- Update the version in `[tool.poetry]` when you cut a release
-- Build artifacts:
-    ```bash
-    poetry build
-    # dist/ contains .whl and .tar.gz
-    ```
-- Publish to PyPI (requires configured credentials):
-    ```bash
-    poetry publish
-    ```
-
-The package name is `procsight` and the README (this file) is used for the project long description.
-
 ## Troubleshooting
 
 - psutil permissions: some metrics (e.g., open files, affinity) may require elevated permissions or are unavailable on certain platforms; the tool falls back gracefully.
